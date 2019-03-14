@@ -37,14 +37,13 @@ public class ClientService {
 
     public User getUser(String email, String password){
 
-         User user = base.path("/api/users")
+         return base.path("/api/users")
                  .register(new Authenticator(email,password))
                 .path(email)
                 .request(MediaType.APPLICATION_JSON)
-                .get(new GenericType<User>(){});
+                .get()
+                 .readEntity(User.class);
 
-
-         return null;
     }
 
     public void close(){

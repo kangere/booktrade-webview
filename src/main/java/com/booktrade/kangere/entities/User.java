@@ -1,37 +1,41 @@
 package com.booktrade.kangere.entities;
 
-import javax.xml.bind.annotation.XmlRootElement;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Date;
 
-@XmlRootElement
 public class User {
     public enum AccountType{
         BASIC,BUSINESS
     }
 
 
-
+    @JsonProperty
     private String email;
 
-
+    @JsonProperty
     private String firstName;
 
-
+    @JsonProperty
     private String lastName;
 
+    @JsonProperty
     private String username;
 
-
+    @JsonProperty
     private String password;
 
-
+    @JsonProperty
     private int phoneNumber;
 
+    @JsonProperty
     private int countryCode;
 
-
+    @JsonProperty
     private Date createdAt;
 
+    @JsonProperty
     private AccountType accountType;
 
     public User(){}
@@ -106,5 +110,10 @@ public class User {
 
     public void setAccountType(AccountType accountType) {
         this.accountType = accountType;
+    }
+
+    @Override
+    public String toString() {
+        return firstName + " : " + lastName + " : " +email;
     }
 }

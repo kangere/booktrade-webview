@@ -1,5 +1,9 @@
 package com.booktrade.kangere.views;
 
+import com.booktrade.kangere.entities.User;
+import com.booktrade.kangere.service.ClientService;
+import com.vaadin.data.Binder;
+import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.View;
 import com.vaadin.ui.*;
@@ -36,16 +40,37 @@ public class LoginView extends VerticalLayout implements View {
 
 
         TextField emailField = new TextField("Email");
+
+
+        new Binder<User>().forField(emailField)
+                .withValidator(new EmailValidator("Invalid Email"))
+                .withValidator(str -> !str.isEmpty(),"Email cannot be empty")
+                .bind(User::getEmail,User::setEmail);
+
         layout.addComponents(emailField);
 
         PasswordField passField = new PasswordField("Password");
+        new Binder<User>().forField(passField)
+                .withValidator(str -> !str.isEmpty(),"Password cannot be empty")
+                .bind(User::getPassword, User::setPassword);
         layout.addComponents(passField);
 
         Button login = new Button();
         login.setCaption("login");
         login.addClickListener(clickEvent -> {
-//            navigator.navigateTo(MainView.NAME);
-            Notification.show("Login Clicked");
+
+            String email = emailField.getValue();
+            String password = passField.getValue();
+
+            ClientService service = ClientService.getInstance();
+
+            User user = service.getUser(email,password);
+
+            //TODO: Store user information in VaadinSession/HttpSession
+            if(user != null)
+                navigator.navigateTo(MainView.NAME);
+            else
+                Notification.show("Invlaid Credentials");
         });
 
         layout.addComponent(login);
