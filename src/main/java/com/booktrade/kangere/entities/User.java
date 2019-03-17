@@ -27,7 +27,7 @@ public class User {
     private String password;
 
     @JsonProperty
-    private int phoneNumber;
+    private Long phoneNumber;
 
     @JsonProperty
     private int countryCode;
@@ -80,11 +80,11 @@ public class User {
         this.password = password;
     }
 
-    public int getPhoneNumber() {
+    public Long getPhoneNumber() {
         return phoneNumber;
     }
 
-    public void setPhoneNumber(int phoneNumber) {
+    public void setPhoneNumber(Long phoneNumber) {
         this.phoneNumber = phoneNumber;
     }
 

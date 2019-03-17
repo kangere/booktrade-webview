@@ -34,6 +34,7 @@ public class MyUI extends UI {
         navigator.addView(MainView.NAME,MainView.class);
 
         navigator.navigateTo(LoginView.NAME);
+        navigator.setErrorView(loginView);
     }
 
     @WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)

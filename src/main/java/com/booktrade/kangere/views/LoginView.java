@@ -3,9 +3,13 @@ package com.booktrade.kangere.views;
 import com.booktrade.kangere.entities.User;
 import com.booktrade.kangere.service.ClientService;
 import com.vaadin.data.Binder;
+import com.vaadin.data.ValidationException;
+import com.vaadin.data.converter.StringToIntegerConverter;
+import com.vaadin.data.converter.StringToLongConverter;
 import com.vaadin.data.validator.EmailValidator;
 import com.vaadin.navigator.Navigator;
 import com.vaadin.navigator.View;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.*;
 
 public class LoginView extends VerticalLayout implements View {
@@ -13,6 +17,8 @@ public class LoginView extends VerticalLayout implements View {
     public static final String NAME = "login";
 
     private Navigator navigator;
+
+    private ClientService service;
 
     public LoginView(Navigator navigator){
 
@@ -62,15 +68,15 @@ public class LoginView extends VerticalLayout implements View {
             String email = emailField.getValue();
             String password = passField.getValue();
 
-            ClientService service = ClientService.getInstance();
+            service = ClientService.getInstance();
 
-            User user = service.getUser(email,password);
+            boolean loginSuccess = service.login(email,password);
 
-            //TODO: Store user information in VaadinSession/HttpSession
-            if(user != null)
+            if(loginSuccess)
                 navigator.navigateTo(MainView.NAME);
             else
-                Notification.show("Invlaid Credentials");
+                Notification.show("Invalid Credentials");
+
         });
 
         layout.addComponent(login);
@@ -79,41 +85,79 @@ public class LoginView extends VerticalLayout implements View {
 
     private Component buildRegisterForm(){
 
+        Binder<User> binder = new Binder<>();
+
+
         FormLayout layout = new FormLayout();
         layout.setMargin(true);
 
 
         TextField fnameField = new TextField("First Name");
+        binder.bind(fnameField,User::getFirstName, User::setFirstName);
         layout.addComponent(fnameField);
 
         TextField lnameField = new TextField("Last Name");
+        binder.bind(lnameField,User::getLastName, User::setLastName);
         layout.addComponent(lnameField);
 
         TextField emailField = new TextField("Email");
+        binder.bind(emailField,User::getEmail,User::setEmail);
         layout.addComponent(emailField);
 
         //TODO: Add username validation
-//        Label usernameLabel = new Label("Email");
-//        TextField usernameField = new TextField();
-//        layout.addComponents(emailLabel,emailField);
+        TextField usernameField = new TextField("Username");
+        binder.bind(usernameField,User::getUsername,User::setUsername);
+        layout.addComponents(usernameField,emailField);
 
         TextField phoneField = new TextField("Phonenumber");
+        binder.forField(phoneField)
+                .withConverter(new StringToLongConverter("Must be a number"))
+                .bind(User::getPhoneNumber,User::setPhoneNumber);
         layout.addComponent(phoneField);
 
-        //TODO: limit Country code field size
+        //TODO: Use DropDown
         TextField codeField = new TextField("Phone Country Code");
+        binder.forField(codeField)
+                .withValidator(str -> str.length() < 4, "Invalid Input")
+                .withConverter(new StringToIntegerConverter("Number Required"))
+                .bind(User::getCountryCode,User::setCountryCode);
         layout.addComponent(codeField);
 
         PasswordField passField = new PasswordField("Password");
+        binder.bind(passField,User::getPassword,User::setPassword);
         layout.addComponent(passField);
 
         PasswordField confirmField = new PasswordField("Confirm Password");
+        binder.forField(confirmField)
+                .withValidator(str -> passField.getValue().equals(str),"Password does not Match");
         layout.addComponent(confirmField);
 
         Button register = new Button();
         register.setCaption("Register");
         register.addClickListener(event -> {
-            Notification.show("Registration Clicked");
+
+            User user = new User();
+
+            try {
+                binder.writeBean(user);
+            }catch(ValidationException e){
+                Notification.show(e.getMessage());
+            }
+
+            if(binder.isValid()){
+
+                user.setAccountType(User.AccountType.BASIC);
+                service = ClientService.getInstance();
+
+                boolean registrationSuccess = service.register(user);
+
+                if(registrationSuccess){
+                    Notification.show("Registration Successful, You can now login");
+                } else {
+                    Notification.show("Registration failed, Try Again");
+                }
+            }
+
         });
         layout.addComponent(register);
 
