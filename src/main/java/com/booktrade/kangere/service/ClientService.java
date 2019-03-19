@@ -5,12 +5,14 @@ import com.booktrade.kangere.entities.Author;
 import com.booktrade.kangere.entities.Book;
 import com.booktrade.kangere.entities.OwnedBook;
 import com.booktrade.kangere.entities.User;
+
+import com.booktrade.kangere.utils.SessionData;
 import com.vaadin.server.VaadinSession;
-import elemental.json.JsonArray;
-import elemental.json.JsonObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 import javax.ws.rs.client.*;
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -61,7 +63,7 @@ public class ClientService {
          
          User user = response.readEntity(User.class);
 
-         VaadinSession.getCurrent().setAttribute("user",user);
+         SessionData.setCurrentUser(user);
         
          return true;
     }
@@ -79,6 +81,8 @@ public class ClientService {
     public boolean addBook(OwnedBook ownedBook){
 
         //TODO: implement
+        Invocation.Builder builder = base.path("/api/users/{email}/books")
+                .request(MediaType.APPLICATION_JSON);
         return false;
     }
 
@@ -88,37 +92,81 @@ public class ClientService {
         return false;
     }
 
-    public String getBookDetails(Long isbn){
+    //TODO: Refactor
+    public Book getBookDetails(Long isbn){
 
 
-        //TODO: finish implementation
-        JsonObject json = client.target(DETAILS_URI)
+        String jsonString = client.target(DETAILS_URI)
                 .queryParam("q","isbn:"+isbn.toString())
                 .request(MediaType.APPLICATION_JSON)
-                .get(JsonObject.class);
+                .get(String.class);
+
+
+        JSONObject json = new JSONObject(jsonString);
 
         Book book = new Book();
+        book.setIsbn(isbn);
         List<Author> authors = new ArrayList<>();
 
-        JsonArray items = json.getArray("items");
-        JsonObject bookDetails = items.getObject(0);
+        JSONArray items = json.getJSONArray("items");
+        JSONObject bookDetails = items.getJSONObject(0);
 
         String link = bookDetails.getString("selfLink");
+        book.setExternalLink(link);
 
-        JsonObject volumeInfo = bookDetails.getObject("volumeInfo");
+        JSONObject volumeInfo = bookDetails.getJSONObject("volumeInfo");
+
         String title = volumeInfo.getString("title");
-        JsonArray author_array = volumeInfo.getArray("authors");
+        book.setTitle(title);
 
+        JSONArray author_array = volumeInfo.getJSONArray("authors");
         //get authors
         for(int i = 0; i < author_array.length(); ++i){
 
-            String authorName = author_array.get(i);
+            String authorName = author_array.getString(i);
+            String[] split = authorName.split("\\s+");
 
+            Author author = new Author();
+            author.setFname(split[0]);
+            author.setLname(split[split.length-1]);
+
+            if(split.length > 2){
+                author.setMname(split[1]);
+            }
+
+            authors.add(author);
 
         }
 
-        System.out.println(json.toJson());
-        return json.toJson();
+        book.setAuthors(authors);
+
+
+
+        if(volumeInfo.has("publisher")) {
+            String publisher = volumeInfo.getString("publisher");
+            book.setPublisher(publisher);
+        }
+
+        String publishedDate = volumeInfo.getString("publishedDate");
+        String language = volumeInfo.getString("language");
+
+        book.setPublishedDate(Integer.valueOf(publishedDate));
+        book.setLanguage(language);
+
+
+
+        System.out.println(json.toString());
+        return book;
+    }
+
+    private Optional<Authenticator> getAuthenticator(){
+        Optional<User> user = SessionData.getCurrentUser();
+
+
+        if(!user.isPresent())
+            return Optional.empty();
+
+        return Optional.of(new Authenticator(user.get().getEmail(),user.get().getPassword()));
     }
 
     public void close(){

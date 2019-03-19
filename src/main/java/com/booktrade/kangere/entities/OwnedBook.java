@@ -64,4 +64,14 @@ public class OwnedBook {
     public void setBook(Book book) {
         this.book = book;
     }
+
+    @Override
+    public String toString() {
+
+        return isbn + "\n"
+                + email + "\n"
+                + bookCondition + "\n"
+                + tradeType + "\n"
+                + book.toString();
+    }
 }

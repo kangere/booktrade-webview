@@ -77,4 +77,21 @@ public class Book {
     public void setAuthors(List<Author> authors) {
         this.authors = authors;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(isbn).append("\n")
+                .append(title).append("\n")
+                .append(publishedDate).append("\n")
+                .append(publisher).append("\n")
+                .append(language).append("\n")
+                .append(externalLink).append("\n");
+
+        for (Author author: authors)
+            builder.append(author.toString());
+
+
+        return builder.toString();
+    }
 }

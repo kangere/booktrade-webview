@@ -33,4 +33,16 @@ public class Author {
     public void setMname(String mname) {
         Mname = mname;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(Fname).append("\t");
+        if(Mname != null)
+            builder.append(Mname).append("\t");
+        builder.append(Lname);
+
+        return builder.toString();
+    }
 }
