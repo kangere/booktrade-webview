@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,7 +24,10 @@ public class ClientServiceTest {
 
     @Test
     public void getBookDetailsTest(){
-        Book book = service.getBookDetails(9789332518667L);
+        Optional<Book> bookOptional = service.getBookDetails(9789332518667L);
+
+
+        Book book = bookOptional.get();
 
         assertEquals(9789332518667L,book.getIsbn().longValue());
         assertEquals("en",book.getLanguage());

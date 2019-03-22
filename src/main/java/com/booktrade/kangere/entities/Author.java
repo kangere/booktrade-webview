@@ -2,6 +2,8 @@ package com.booktrade.kangere.entities;
 
 public class Author {
 
+    private Long authorId;
+
     private String Fname;
 
     private String Lname;
@@ -32,6 +34,14 @@ public class Author {
 
     public void setMname(String mname) {
         Mname = mname;
+    }
+
+    public Long getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(Long authorId) {
+        this.authorId = authorId;
     }
 
     @Override

@@ -10,10 +10,13 @@ import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
 import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.data.converter.StringToLongConverter;
+import com.vaadin.data.provider.DataProvider;
+import com.vaadin.data.provider.ListDataProvider;
 import com.vaadin.navigator.View;
 import com.vaadin.ui.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,16 +27,26 @@ public class LibraryView extends HorizontalLayout implements View {
 
     private Optional<User> user;
 
-    private PopupView popupView;
 
     private ClientService service;
 
     public LibraryView(){
-        FormLayout bookForm = buildBookForm();
-
+        setSizeFull();
+        service = ClientService.getInstance();
         user = SessionData.getCurrentUser();
 
-        addComponent(bookForm);
+
+        FormLayout bookForm = buildBookForm();
+
+        Grid<Book> myBooks = buildBookGrid();
+
+
+
+
+        addComponents(bookForm,myBooks);
+
+
+
     }
 
 
@@ -44,19 +57,14 @@ public class LibraryView extends HorizontalLayout implements View {
         FormLayout layout = new FormLayout();
         layout.setCaption("Add Book");
 
-        TextField isbn = new TextField("Enter Isbn number");
-        layout.addComponent(isbn);
-
-        Button search = new Button("Search");
-        layout.addComponent(search);
-
-
         Binder<Book> bookBinder = new Binder<>();
+
+
+
 
         TextField title = new TextField("Title");
         bookBinder.bind(title,Book::getTitle,Book::setTitle);
         layout.addComponent(title);
-
 
         TextField isbnField = new TextField("ISBN");
         bookBinder.forField(isbnField)
@@ -82,18 +90,18 @@ public class LibraryView extends HorizontalLayout implements View {
         layout.addComponent(language);
 
 
-
         List<OwnedBook.BookCondition> bookConditions = new ArrayList<>();
         bookConditions.add(OwnedBook.BookCondition.DAMAGED);
         bookConditions.add(OwnedBook.BookCondition.LIKE_NEW);
         bookConditions.add(OwnedBook.BookCondition.NEW);
         bookConditions.add(OwnedBook.BookCondition.USED);
 
-
+        //TODO: Ensure item is selected from combobox or set a default value
         ComboBox<OwnedBook.BookCondition> conditionComboBox = new ComboBox<>("Select Book Condition");
         conditionComboBox.setItems(bookConditions);
         conditionComboBox.setTextInputAllowed(false);
         layout.addComponent(conditionComboBox);
+
 
 
         List<OwnedBook.TradeType> tradeTypesList = new ArrayList<>();
@@ -102,57 +110,159 @@ public class LibraryView extends HorizontalLayout implements View {
         tradeTypesList.add(OwnedBook.TradeType.TRADE_OR_SELL);
 
 
+        //TODO: Ensure item is selected from combobox or set a default value
         ComboBox<OwnedBook.TradeType> tradeTypeComboBox = new ComboBox<>("Choose Trade Type:");
         tradeTypeComboBox.setItems(tradeTypesList);
         tradeTypeComboBox.setTextInputAllowed(false);
         layout.addComponent(tradeTypeComboBox);
+
+        FormLayout authorsForm = new FormLayout();
+        authorsForm.setCaption("Authors");
+
+        Binder<Author> authorBinder = new Binder<>();
+
+        //TODO: add not empty validators
+        TextField firstName = new TextField("First Name");
+        authorBinder.bind(firstName,Author::getFname,Author::setFname);
+        authorsForm.addComponent(firstName);
+
+        TextField middleName = new TextField("Middle Name");
+        authorBinder.bind(middleName ,Author::getMname,Author::setMname);
+        authorsForm.addComponent(middleName);
+
+        TextField lastName = new TextField("Last Name");
+        authorBinder.bind(lastName,Author::getLname,Author::setLname);
+        authorsForm.addComponent(lastName);
+
+        layout.addComponent(authorsForm);
+
+        //TODO: find out how to obtain dynamically added authors
+        /*Button addAuthor = new Button("Add Author");
+        addAuthor.addClickListener(listener ->{
+           layout.addComponent(addAuthor());
+        });
+        layout.addComponent(addAuthor);*/
 
 
 
         Button addBook = new Button("Add Book");
         layout.addComponent(addBook);
 
-        search.addClickListener(listener -> {
 
-            service = ClientService.getInstance();
-
-            Long isbnNumber = Long.valueOf(isbn.getValue());
-
-            Book book = service.getBookDetails(isbnNumber);
-
-            bookBinder.readBean(book);
-
-
-        });
 
         addBook.addClickListener(listener ->{
 
-            Book book = new Book();
 
-            try {
-                bookBinder.writeBean(book);
-            }catch (ValidationException e){
-                Notification.show(e.getMessage());
 
-            }
+
+            Long isbnNumber = Long.valueOf(isbnField.getValue());
+
+            Optional<Book> book = service.getBookDetails(isbnNumber);
 
 
             if(bookBinder.isValid()){
                 if(!user.isPresent())
                     throw new IllegalStateException();
 
+                if(!book.isPresent()){
+                    Book book1 = new Book();
+                    try {
+                        bookBinder.writeBean(book1);
+                    }catch (ValidationException e){
+                        Notification.show(e.getMessage());
+
+                    }
+
+                    //TODO: get authors
+                    Author author = new Author();
+                    try {
+                        authorBinder.writeBean(author);
+                    } catch (ValidationException e){
+                        Notification.show(e.getMessage());
+                    }
+
+                    book1.setAuthors(Arrays.asList(author));
+
+                    book = Optional.of(book1);
+                }
+
+
                 OwnedBook ownedBook = new OwnedBook();
-                ownedBook.setIsbn(book.getIsbn());
+                ownedBook.setIsbn(book.get().getIsbn());
                 ownedBook.setEmail(user.get().getEmail());
                 ownedBook.setBookCondition(conditionComboBox.getValue());
                 ownedBook.setTradeType(tradeTypeComboBox.getValue());
-                ownedBook.setBook(book);
+                ownedBook.setBook(book.get());
 
-                Notification.show(ownedBook.toString());
+                if(service.addBook(ownedBook))
+                    Notification.show("Book Added Successfully");
+                else
+                    Notification.show("Unable to add book try again!");
             }
         });
 
         return layout;
+    }
+
+
+    private Grid<Book> buildBookGrid(){
+
+        Grid<Book> grid = new Grid<>();
+
+        grid.addColumn(Book::getTitle).setCaption("Title");
+
+        grid.addColumn(Book::getIsbn).setCaption("ISBN");
+
+        grid.addColumn(Book::getLanguage).setCaption("Language");
+
+        grid.addColumn(Book::getPublishedDate).setCaption("Date");
+
+        grid.addComponentColumn(book -> {
+
+            VerticalLayout layout = new VerticalLayout();
+
+            List<Author> authors = book.getAuthors();
+
+            for(Author author : authors)
+                layout.addComponent(new Label(author.toString()));
+
+            return layout;
+        }).setCaption("Authors");
+
+        List<Book> books = service.getUsersBooks();
+
+        ListDataProvider<Book> dataProvider = DataProvider.ofCollection(books);
+
+        grid.setDataProvider(dataProvider);
+
+        grid.setSizeFull();
+
+        return grid;
+    }
+
+
+
+
+    //TODO:
+    private FormLayout addAuthor(){
+        FormLayout authorsForm = new FormLayout();
+        authorsForm.setCaption("Add Authors");
+
+        Binder<Author> authorBinder = new Binder<>();
+
+        TextField firstName = new TextField("First Name");
+        authorBinder.bind(firstName,Author::getFname,Author::setFname);
+        authorsForm.addComponent(firstName);
+
+        TextField middleName = new TextField("Middle Name");
+        authorBinder.bind(middleName ,Author::getMname,Author::setMname);
+        authorsForm.addComponent(middleName);
+
+        TextField lastName = new TextField("Last Name");
+        authorBinder.bind(lastName,Author::getLname,Author::setLname);
+        authorsForm.addComponent(lastName);
+
+        return authorsForm;
     }
 
 

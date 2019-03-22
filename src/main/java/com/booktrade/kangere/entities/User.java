@@ -3,9 +3,10 @@ package com.booktrade.kangere.entities;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class User {
+public class User implements Serializable {
     public enum AccountType{
         BASIC,BUSINESS
     }

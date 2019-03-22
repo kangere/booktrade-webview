@@ -24,6 +24,7 @@ public class MainView extends VerticalLayout implements View {
 
         Panel viewPanel = new Panel();
 
+
         internalNavigator = new Navigator(UI.getCurrent(),viewPanel);
         internalNavigator.addView(OrdersView.NAME,OrdersView.class);
         internalNavigator.addView(RequestsView.NAME,RequestsView.class);
