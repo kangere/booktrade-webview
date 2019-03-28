@@ -23,17 +23,21 @@ public class MainView extends VerticalLayout implements View {
         user = Optional.of((User)VaadinSession.getCurrent().getAttribute("user"));
 
         Panel viewPanel = new Panel();
-
+        viewPanel.setWidth("100%");
 
         internalNavigator = new Navigator(UI.getCurrent(),viewPanel);
         internalNavigator.addView(OrdersView.NAME,OrdersView.class);
         internalNavigator.addView(RequestsView.NAME,RequestsView.class);
         internalNavigator.addView(StoreView.NAME,StoreView.class);
         internalNavigator.addView(LibraryView.NAME,LibraryView.class);
+        internalNavigator.addView(BookView.NAME,BookView.class);
+
+        internalNavigator.setErrorView(StoreView.class);
 
         internalNavigator.navigateTo(StoreView.NAME);
 
         MenuBar menubar = buildMenuBar();
+
 
         addComponents(menubar,viewPanel);
 

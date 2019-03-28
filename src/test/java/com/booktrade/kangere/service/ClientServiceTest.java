@@ -24,7 +24,7 @@ public class ClientServiceTest {
 
     @Test
     public void getBookDetailsTest(){
-        Optional<Book> bookOptional = service.getBookDetails(9789332518667L);
+        Optional<Book> bookOptional = service.getBookDetailsFromGoogleBooks(9789332518667L);
 
 
         Book book = bookOptional.get();

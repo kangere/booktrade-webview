@@ -1,11 +1,9 @@
 package com.booktrade.kangere.service;
 
 
-import com.booktrade.kangere.entities.Author;
-import com.booktrade.kangere.entities.Book;
-import com.booktrade.kangere.entities.OwnedBook;
-import com.booktrade.kangere.entities.User;
+import com.booktrade.kangere.entities.*;
 
+import com.booktrade.kangere.utils.Parser;
 import com.booktrade.kangere.utils.SessionData;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -101,6 +99,7 @@ public class ClientService {
 
         Optional<User> user = SessionData.getCurrentUser();
 
+        //TODO: possible logout
         if(!user.isPresent())
             throw new IllegalStateException("No User Found");
 
@@ -110,16 +109,44 @@ public class ClientService {
                 .cookie(sessionId)
                 .get();
 
-        int status = response.getStatus();
+        if(response.getStatus() != 200)
+            logger.log(Level.SEVERE, response.getStatusInfo().toString());
 
-        logger.log(Level.INFO,"Response Code:" + status);
+       return response.readEntity(new GenericType<List<Book>>(){});
+
+    }
+
+
+    public List<Book> getBooksByTitle(String title){
+        return getAvailableBooks(title,null);
+    }
+
+    public List<Book> getBookByIsbn(Long isbn){
+        return getAvailableBooks(null,isbn);
+    }
+
+    public List<Book> getAllAvailableBooks(){
+        return getAvailableBooks(null,null);
+    }
+
+    private List<Book> getAvailableBooks(String title, Long isbn){
+
+        WebTarget target = base.path("books");
+
+        if(title != null)
+            target = target.queryParam("title",title);
+         else if( isbn != null )
+            target = target.queryParam("isbn",isbn);
+
+        Response response = target
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId)
+                .get();
 
         if(response.getStatus() != 200)
             logger.log(Level.SEVERE, response.getStatusInfo().toString());
 
-        List<Book> books = response.readEntity(new GenericType<List<Book>>(){});
-
-        return books;
+        return response.readEntity(new GenericType<List<Book>>(){});
     }
 
     private boolean userExists(String email) {
@@ -129,7 +156,7 @@ public class ClientService {
     }
 
     //TODO: Refactor
-    public Optional<Book> getBookDetails(Long isbn) {
+    public Optional<Book> getBookDetailsFromGoogleBooks(Long isbn) {
 
 
         String jsonString = client.target(DETAILS_URI)
@@ -200,12 +227,24 @@ public class ClientService {
         return Optional.of(book);
     }
 
+    public ExtraBookDetails getExtraBookDetails(String url){
+
+        String jsonString = client.target(url)
+                .request(MediaType.APPLICATION_JSON)
+                .get(String.class);
+
+        return Parser.getExtraBookDetails(new JSONObject(jsonString));
+    }
+
+
 
     public void close() {
         if (serviceOptional.isPresent())
             client.close();
 
     }
+
+
 
 
 }

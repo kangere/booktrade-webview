@@ -31,19 +31,20 @@ public class LibraryView extends HorizontalLayout implements View {
     private ClientService service;
 
     public LibraryView(){
-        setSizeFull();
+        setWidth("100%");
         service = ClientService.getInstance();
         user = SessionData.getCurrentUser();
 
 
         FormLayout bookForm = buildBookForm();
+        bookForm.setWidth(null);
+        addComponent(bookForm);
 
         Grid<Book> myBooks = buildBookGrid();
+        myBooks.setWidth("100%");
+        addComponent(myBooks);
 
-
-
-
-        addComponents(bookForm,myBooks);
+        setExpandRatio(myBooks,1.0f);
 
 
 
@@ -157,7 +158,7 @@ public class LibraryView extends HorizontalLayout implements View {
 
             Long isbnNumber = Long.valueOf(isbnField.getValue());
 
-            Optional<Book> book = service.getBookDetails(isbnNumber);
+            Optional<Book> book = service.getBookDetailsFromGoogleBooks(isbnNumber);
 
 
             if(bookBinder.isValid()){
@@ -235,7 +236,7 @@ public class LibraryView extends HorizontalLayout implements View {
 
         grid.setDataProvider(dataProvider);
 
-        grid.setSizeFull();
+
 
         return grid;
     }
