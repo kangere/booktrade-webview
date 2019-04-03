@@ -18,6 +18,10 @@ public class Book {
 
     private String externalLink;
 
+    private String description;
+
+    private String thumbnail;
+
     private List<Author> authors;
 
     public Book(){}
@@ -76,6 +80,22 @@ public class Book {
 
     public void setAuthors(List<Author> authors) {
         this.authors = authors;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
     }
 
     @Override

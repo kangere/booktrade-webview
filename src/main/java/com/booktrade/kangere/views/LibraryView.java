@@ -1,24 +1,27 @@
 package com.booktrade.kangere.views;
 
-import com.booktrade.kangere.entities.Author;
-import com.booktrade.kangere.entities.Book;
-import com.booktrade.kangere.entities.OwnedBook;
-import com.booktrade.kangere.entities.User;
+import com.booktrade.kangere.components.LibBookCard;
+import com.booktrade.kangere.entities.*;
 import com.booktrade.kangere.service.ClientService;
 import com.booktrade.kangere.utils.SessionData;
+import com.booktrade.kangere.validators.NotEmptyValidator;
 import com.vaadin.data.Binder;
 import com.vaadin.data.ValidationException;
+import com.vaadin.data.converter.StringToBigDecimalConverter;
 import com.vaadin.data.converter.StringToIntegerConverter;
 import com.vaadin.data.converter.StringToLongConverter;
 import com.vaadin.data.provider.DataProvider;
 import com.vaadin.data.provider.ListDataProvider;
+import com.vaadin.data.validator.StringLengthValidator;
 import com.vaadin.navigator.View;
 import com.vaadin.ui.*;
+import com.vaadin.ui.themes.ValoTheme;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class LibraryView extends HorizontalLayout implements View {
 
@@ -31,6 +34,8 @@ public class LibraryView extends HorizontalLayout implements View {
     private ClientService service;
 
     public LibraryView(){
+
+
         setWidth("100%");
         service = ClientService.getInstance();
         user = SessionData.getCurrentUser();
@@ -40,13 +45,16 @@ public class LibraryView extends HorizontalLayout implements View {
         bookForm.setWidth(null);
         addComponent(bookForm);
 
-        Grid<Book> myBooks = buildBookGrid();
+//        Grid<Book> myBooks = buildBookGrid();
+
+        GridLayout myBooks = showUsersBooks();
+
         myBooks.setWidth("100%");
         addComponent(myBooks);
 
         setExpandRatio(myBooks,1.0f);
 
-
+        setMargin(true);
 
     }
 
@@ -61,14 +69,15 @@ public class LibraryView extends HorizontalLayout implements View {
         Binder<Book> bookBinder = new Binder<>();
 
 
-
-
         TextField title = new TextField("Title");
-        bookBinder.bind(title,Book::getTitle,Book::setTitle);
+        bookBinder.forField(title)
+                .withValidator(new NotEmptyValidator())
+                .bind(Book::getTitle,Book::setTitle);
         layout.addComponent(title);
 
         TextField isbnField = new TextField("ISBN");
         bookBinder.forField(isbnField)
+                .withValidator(new NotEmptyValidator())
                 .withConverter(new StringToLongConverter(""))
                 .bind(Book::getIsbn,Book::setIsbn);
         layout.addComponent(isbnField);
@@ -76,13 +85,16 @@ public class LibraryView extends HorizontalLayout implements View {
 
         TextField publishedDate = new TextField("Date Published");
         bookBinder.forField(publishedDate)
+                .withValidator(new NotEmptyValidator())
                 .withConverter(new StringToIntegerConverter("Number Required"))
                 .bind(Book::getPublishedDate,Book::setPublishedDate);
         layout.addComponent(publishedDate);
 
 
         TextField publisher = new TextField("Publisher");
-        bookBinder.bind(publisher,Book::getPublisher, Book::setPublisher);
+        bookBinder.forField(publisher)
+                .withValidator(new NotEmptyValidator(60))
+                .bind(Book::getPublisher, Book::setPublisher);
         layout.addComponent(publisher);
 
 
@@ -91,18 +103,30 @@ public class LibraryView extends HorizontalLayout implements View {
         layout.addComponent(language);
 
 
+        Binder<OwnedBook> ownedBookBinder = new Binder<>();
+
         List<OwnedBook.BookCondition> bookConditions = new ArrayList<>();
         bookConditions.add(OwnedBook.BookCondition.DAMAGED);
         bookConditions.add(OwnedBook.BookCondition.LIKE_NEW);
         bookConditions.add(OwnedBook.BookCondition.NEW);
         bookConditions.add(OwnedBook.BookCondition.USED);
 
-        //TODO: Ensure item is selected from combobox or set a default value
+
         ComboBox<OwnedBook.BookCondition> conditionComboBox = new ComboBox<>("Select Book Condition");
         conditionComboBox.setItems(bookConditions);
+        conditionComboBox.setValue(OwnedBook.BookCondition.USED);
         conditionComboBox.setTextInputAllowed(false);
+        conditionComboBox.setEmptySelectionAllowed(false);
+        ownedBookBinder.bind(conditionComboBox,OwnedBook::getBookCondition,OwnedBook::setBookCondition);
         layout.addComponent(conditionComboBox);
 
+
+        TextField price = new TextField("Book Price");
+        ownedBookBinder.forField(price)
+                .withValidator(new NotEmptyValidator())
+                .withConverter(new StringToBigDecimalConverter("Invalid Input"))
+                .bind(OwnedBook::getPrice,OwnedBook::setPrice);
+        layout.addComponent(price);
 
 
         List<OwnedBook.TradeType> tradeTypesList = new ArrayList<>();
@@ -111,10 +135,19 @@ public class LibraryView extends HorizontalLayout implements View {
         tradeTypesList.add(OwnedBook.TradeType.TRADE_OR_SELL);
 
 
-        //TODO: Ensure item is selected from combobox or set a default value
         ComboBox<OwnedBook.TradeType> tradeTypeComboBox = new ComboBox<>("Choose Trade Type:");
         tradeTypeComboBox.setItems(tradeTypesList);
+        tradeTypeComboBox.setValue(OwnedBook.TradeType.TRADE_OR_SELL);
         tradeTypeComboBox.setTextInputAllowed(false);
+        tradeTypeComboBox.setEmptySelectionAllowed(false);
+        ownedBookBinder.bind(tradeTypeComboBox,OwnedBook::getTradeType,OwnedBook::setTradeType);
+        tradeTypeComboBox.addValueChangeListener(listerner ->{
+           if(listerner.getValue().equals(OwnedBook.TradeType.TRADE))
+               price.setReadOnly(true);
+           else
+               price.setReadOnly(false);
+        });
+
         layout.addComponent(tradeTypeComboBox);
 
         FormLayout authorsForm = new FormLayout();
@@ -122,27 +155,27 @@ public class LibraryView extends HorizontalLayout implements View {
 
         Binder<Author> authorBinder = new Binder<>();
 
-        //TODO: add not empty validators
+
         TextField firstName = new TextField("First Name");
-        authorBinder.bind(firstName,Author::getFname,Author::setFname);
+        authorBinder.forField(firstName)
+                .withValidator(new NotEmptyValidator())
+                .bind(Author::getFname,Author::setFname);
         authorsForm.addComponent(firstName);
 
         TextField middleName = new TextField("Middle Name");
-        authorBinder.bind(middleName ,Author::getMname,Author::setMname);
+        authorBinder.forField(middleName)
+                .withValidator(new NotEmptyValidator())
+                .bind(Author::getMname,Author::setMname);
         authorsForm.addComponent(middleName);
 
         TextField lastName = new TextField("Last Name");
-        authorBinder.bind(lastName,Author::getLname,Author::setLname);
+        authorBinder.forField(lastName)
+                .withValidator(new NotEmptyValidator())
+                .bind(Author::getLname,Author::setLname);
         authorsForm.addComponent(lastName);
-
+        //TODO: Dynamically add author forms
         layout.addComponent(authorsForm);
 
-        //TODO: find out how to obtain dynamically added authors
-        /*Button addAuthor = new Button("Add Author");
-        addAuthor.addClickListener(listener ->{
-           layout.addComponent(addAuthor());
-        });
-        layout.addComponent(addAuthor);*/
 
 
 
@@ -185,14 +218,30 @@ public class LibraryView extends HorizontalLayout implements View {
                     book1.setAuthors(Arrays.asList(author));
 
                     book = Optional.of(book1);
+
+                } else {
+                    ExtraBookDetails details = service.getExtraBookDetails(book.get().getExternalLink());
+
+                    String thumbnail = details.getThumbnail();
+                    String description = details.getDescription();
+
+                    if(thumbnail != null)
+                        book.get().setThumbnail(details.getThumbnail());
+
+                    if(description != null)
+                        book.get().setDescription(description);
                 }
 
 
                 OwnedBook ownedBook = new OwnedBook();
+                try {
+                    ownedBookBinder.writeBean(ownedBook);
+                } catch (ValidationException e){
+                    Notification.show(e.getMessage());
+                }
+
                 ownedBook.setIsbn(book.get().getIsbn());
                 ownedBook.setEmail(user.get().getEmail());
-                ownedBook.setBookCondition(conditionComboBox.getValue());
-                ownedBook.setTradeType(tradeTypeComboBox.getValue());
                 ownedBook.setBook(book.get());
 
                 if(service.addBook(ownedBook))
@@ -206,65 +255,25 @@ public class LibraryView extends HorizontalLayout implements View {
     }
 
 
-    private Grid<Book> buildBookGrid(){
 
-        Grid<Book> grid = new Grid<>();
+    private GridLayout showUsersBooks(){
 
-        grid.addColumn(Book::getTitle).setCaption("Title");
-
-        grid.addColumn(Book::getIsbn).setCaption("ISBN");
-
-        grid.addColumn(Book::getLanguage).setCaption("Language");
-
-        grid.addColumn(Book::getPublishedDate).setCaption("Date");
-
-        grid.addComponentColumn(book -> {
-
-            VerticalLayout layout = new VerticalLayout();
-
-            List<Author> authors = book.getAuthors();
-
-            for(Author author : authors)
-                layout.addComponent(new Label(author.toString()));
-
-            return layout;
-        }).setCaption("Authors");
+        GridLayout layout = new GridLayout(3,1);
+        layout.setSpacing(true);
+        layout.addStyleName(ValoTheme.LAYOUT_HORIZONTAL_WRAPPING);
 
         List<Book> books = service.getUsersBooks();
 
-        ListDataProvider<Book> dataProvider = DataProvider.ofCollection(books);
+        for(Book b : books){
+            LibBookCard card = new LibBookCard(b);
+            layout.addComponent(card);
+        }
 
-        grid.setDataProvider(dataProvider);
-
-
-
-        return grid;
+        return layout;
     }
 
 
 
-
-    //TODO:
-    private FormLayout addAuthor(){
-        FormLayout authorsForm = new FormLayout();
-        authorsForm.setCaption("Add Authors");
-
-        Binder<Author> authorBinder = new Binder<>();
-
-        TextField firstName = new TextField("First Name");
-        authorBinder.bind(firstName,Author::getFname,Author::setFname);
-        authorsForm.addComponent(firstName);
-
-        TextField middleName = new TextField("Middle Name");
-        authorBinder.bind(middleName ,Author::getMname,Author::setMname);
-        authorsForm.addComponent(middleName);
-
-        TextField lastName = new TextField("Last Name");
-        authorBinder.bind(lastName,Author::getLname,Author::setLname);
-        authorsForm.addComponent(lastName);
-
-        return authorsForm;
-    }
 
 
 }

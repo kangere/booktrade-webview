@@ -21,6 +21,8 @@ public class StoreView extends VerticalLayout implements View {
 
     private ClientService service;
 
+    private CssLayout grid = new CssLayout();
+
     public StoreView(){
        /* String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
 
@@ -29,23 +31,33 @@ public class StoreView extends VerticalLayout implements View {
         Image poster = new Image("",resource);
         poster.setWidth("100%");
         poster.setHeight(400, Unit.PIXELS);*/
+       grid.setStyleName("wrap");
         service = ClientService.getInstance();
 
         SearchBox searchBox = new SearchBox("Search",SearchBox.ButtonPosition.RIGHT);
 
-        searchBox.addSearchListener(e -> Notification.show("Searching"));
 
-        GridLayout grid = booksGrid();
+
+        List<Book> books = service.getAllAvailableBooks();
+        populateGrid(books);
 
         addComponents(searchBox,grid);
 
+
+
+        searchBox.addSearchListener(e -> {
+
+            String title = e.getSearchTerm();
+
+            List<Book> filtered = service.getBooksByTitle(title);
+
+            grid.removeAllComponents();
+            populateGrid(filtered);
+        });
     }
 
-    private GridLayout booksGrid(){
+    private void populateGrid(List<Book> books){
 
-        List<Book> books = service.getAllAvailableBooks();
-
-        GridLayout layout  = new GridLayout(3,5);
 
         for(Book b : books){
 
@@ -55,9 +67,10 @@ public class StoreView extends VerticalLayout implements View {
                 details = service.getExtraBookDetails(b.getExternalLink());
             }
             BookCard card = new BookCard(b,details);
-            layout.addComponent(card);
+            grid.addComponent(card);
         }
 
-        return layout;
+
+
     }
 }

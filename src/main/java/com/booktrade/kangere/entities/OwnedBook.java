@@ -1,5 +1,7 @@
 package com.booktrade.kangere.entities;
 
+import java.math.BigDecimal;
+
 public class OwnedBook {
 
     public enum BookCondition{
@@ -21,7 +23,11 @@ public class OwnedBook {
 
     private TradeType tradeType;
 
+    private BigDecimal price;
+
     private Book book;
+
+    private User user;
 
     public OwnedBook(){}
 
@@ -63,6 +69,22 @@ public class OwnedBook {
 
     public void setBook(Book book) {
         this.book = book;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     @Override

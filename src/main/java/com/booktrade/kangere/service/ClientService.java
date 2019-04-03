@@ -99,7 +99,7 @@ public class ClientService {
 
         Optional<User> user = SessionData.getCurrentUser();
 
-        //TODO: possible logout
+        //TODO:  logout
         if(!user.isPresent())
             throw new IllegalStateException("No User Found");
 
@@ -155,7 +155,55 @@ public class ClientService {
         return false;
     }
 
-    //TODO: Refactor
+
+
+    public boolean deleteBook(Long isbn){
+
+        Optional<User> user = SessionData.getCurrentUser();
+
+        //TODO:  logout
+        if(!user.isPresent())
+            throw new IllegalStateException("No User Found");
+
+        Invocation.Builder builder = base.path("users/{email}/books/{isbn}")
+                .resolveTemplate("email", user.get().getEmail())
+                .resolveTemplate("isbn",isbn)
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId);
+
+        Response response = builder.delete();
+
+        if(response.getStatus() == 200)
+            return true;
+
+        logger.log(Level.SEVERE,response.getStatusInfo().toString());
+        return false;
+    }
+
+    public List<OwnedBook> getBookOwners(String email, Long isbn){
+
+        Optional<User> user = SessionData.getCurrentUser();
+
+        //TODO:  logout
+        if(!user.isPresent())
+            throw new IllegalStateException("No User Found");
+
+        Response response = base.path("users/{email}/books/{isbn}/owners")
+                .resolveTemplate("email",user.get().getEmail())
+                .resolveTemplate("isbn",isbn)
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId)
+                .get();
+
+        if(response.getStatus() != 200)
+            logger.log(Level.SEVERE, response.getStatusInfo().toString());
+
+        return response.readEntity(new GenericType<List<OwnedBook>>(){});
+
+    }
+
+
+
     public Optional<Book> getBookDetailsFromGoogleBooks(Long isbn) {
 
 
@@ -167,64 +215,8 @@ public class ClientService {
 
         JSONObject json = new JSONObject(jsonString);
 
-        Book book = new Book();
-        book.setIsbn(isbn);
-        List<Author> authors = new ArrayList<>();
+        return Parser.getBasicBookDetails(json);
 
-        if (json.getInt("totalItems") == 0)
-            return Optional.empty();
-
-        JSONArray items = json.getJSONArray("items");
-        JSONObject bookDetails = items.getJSONObject(0);
-
-        String link = bookDetails.getString("selfLink");
-        book.setExternalLink(link);
-
-        JSONObject volumeInfo = bookDetails.getJSONObject("volumeInfo");
-
-        String title = volumeInfo.getString("title");
-        book.setTitle(title);
-
-        JSONArray author_array = volumeInfo.getJSONArray("authors");
-        //get authors
-        for (int i = 0; i < author_array.length(); ++i) {
-
-            String authorName = author_array.getString(i);
-            String[] split = authorName.split("\\s+");
-
-            Author author = new Author();
-            author.setFname(split[0]);
-            author.setLname(split[split.length - 1]);
-
-            if (split.length > 2) {
-                author.setMname(split[1]);
-            }
-
-            authors.add(author);
-
-        }
-
-        book.setAuthors(authors);
-
-
-        if (volumeInfo.has("publisher")) {
-            String publisher = volumeInfo.getString("publisher");
-            book.setPublisher(publisher);
-        }
-
-        String publishedDate = volumeInfo.getString("publishedDate");
-        String language = volumeInfo.getString("language");
-
-        if (publishedDate.length() > 4)
-            publishedDate = publishedDate.substring(0, 4);
-
-        book.setPublishedDate(Integer.valueOf(publishedDate));
-        book.setLanguage(language);
-
-
-        System.out.println(json.toString());
-
-        return Optional.of(book);
     }
 
     public ExtraBookDetails getExtraBookDetails(String url){

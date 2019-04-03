@@ -5,14 +5,15 @@ import com.booktrade.kangere.entities.Book;
 import com.booktrade.kangere.entities.ExtraBookDetails;
 import com.booktrade.kangere.views.BookView;
 import com.vaadin.server.ExternalResource;
-import com.vaadin.server.Page;
+import com.vaadin.server.FileResource;
+import com.vaadin.server.VaadinService;
 import com.vaadin.ui.*;
+
+import java.io.File;
 
 public class BookCard extends VerticalLayout {
 
     private String title;
-
-
 
     private Book book;
 
@@ -29,13 +30,16 @@ public class BookCard extends VerticalLayout {
 
         Image thumbnail = new Image();
 
-        if(details.getThumbnail() != null)
+        if(details.getThumbnail() != null) {
             thumbnail.setSource(new ExternalResource(details.getThumbnail()));
-        else
-            thumbnail.setCaption("Thumbnail not available");
+        } else {
 
-//        thumbnail.setWidth(100,Unit.PIXELS);
-//        thumbnail.setHeight(100,Unit.PIXELS);
+            String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+            FileResource resource = new FileResource(new File(basepath+ "/WEB-INF/classes/images/placeholder.jpg"));
+
+            thumbnail.setSource(resource);
+        }
+
 
         addComponents(thumbnail);
 
