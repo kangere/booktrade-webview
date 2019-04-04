@@ -17,10 +17,7 @@ import com.vaadin.navigator.View;
 import com.vaadin.ui.*;
 import com.vaadin.ui.themes.ValoTheme;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class LibraryView extends HorizontalLayout implements View {
@@ -33,7 +30,11 @@ public class LibraryView extends HorizontalLayout implements View {
 
     private ClientService service;
 
-    public LibraryView(){
+    private List<Locale> languages = Arrays.asList(
+            Locale.ENGLISH, Locale.FRENCH, Locale.GERMAN, Locale.CHINESE, Locale.ITALIAN
+            , Locale.KOREAN, Locale.JAPANESE);
+
+    public LibraryView() {
 
 
         setWidth("100%");
@@ -52,15 +53,14 @@ public class LibraryView extends HorizontalLayout implements View {
         myBooks.setWidth("100%");
         addComponent(myBooks);
 
-        setExpandRatio(myBooks,1.0f);
+        setExpandRatio(myBooks, 1.0f);
 
         setMargin(true);
 
     }
 
 
-    private FormLayout buildBookForm(){
-
+    private FormLayout buildBookForm() {
 
 
         FormLayout layout = new FormLayout();
@@ -71,15 +71,15 @@ public class LibraryView extends HorizontalLayout implements View {
 
         TextField title = new TextField("Title");
         bookBinder.forField(title)
-                .withValidator(new NotEmptyValidator())
-                .bind(Book::getTitle,Book::setTitle);
+                .withValidator(new NotEmptyValidator(100))
+                .bind(Book::getTitle, Book::setTitle);
         layout.addComponent(title);
 
         TextField isbnField = new TextField("ISBN");
         bookBinder.forField(isbnField)
                 .withValidator(new NotEmptyValidator())
                 .withConverter(new StringToLongConverter(""))
-                .bind(Book::getIsbn,Book::setIsbn);
+                .bind(Book::getIsbn, Book::setIsbn);
         layout.addComponent(isbnField);
 
 
@@ -87,7 +87,7 @@ public class LibraryView extends HorizontalLayout implements View {
         bookBinder.forField(publishedDate)
                 .withValidator(new NotEmptyValidator())
                 .withConverter(new StringToIntegerConverter("Number Required"))
-                .bind(Book::getPublishedDate,Book::setPublishedDate);
+                .bind(Book::getPublishedDate, Book::setPublishedDate);
         layout.addComponent(publishedDate);
 
 
@@ -98,8 +98,12 @@ public class LibraryView extends HorizontalLayout implements View {
         layout.addComponent(publisher);
 
 
-        TextField language = new TextField("Language");
-        bookBinder.bind(language,Book::getLanguage, Book::setLanguage);
+//        TextField language = new TextField("Language");
+//        bookBinder.bind(language, Book::getLanguage, Book::setLanguage);
+//        layout.addComponent(language);
+
+        ComboBox<Locale> language = new ComboBox<>("Language");
+        language.setItems(languages);
         layout.addComponent(language);
 
 
@@ -117,15 +121,14 @@ public class LibraryView extends HorizontalLayout implements View {
         conditionComboBox.setValue(OwnedBook.BookCondition.USED);
         conditionComboBox.setTextInputAllowed(false);
         conditionComboBox.setEmptySelectionAllowed(false);
-        ownedBookBinder.bind(conditionComboBox,OwnedBook::getBookCondition,OwnedBook::setBookCondition);
+        ownedBookBinder.bind(conditionComboBox, OwnedBook::getBookCondition, OwnedBook::setBookCondition);
         layout.addComponent(conditionComboBox);
 
 
         TextField price = new TextField("Book Price");
         ownedBookBinder.forField(price)
-                .withValidator(new NotEmptyValidator())
                 .withConverter(new StringToBigDecimalConverter("Invalid Input"))
-                .bind(OwnedBook::getPrice,OwnedBook::setPrice);
+                .bind(OwnedBook::getPrice, OwnedBook::setPrice);
         layout.addComponent(price);
 
 
@@ -140,12 +143,12 @@ public class LibraryView extends HorizontalLayout implements View {
         tradeTypeComboBox.setValue(OwnedBook.TradeType.TRADE_OR_SELL);
         tradeTypeComboBox.setTextInputAllowed(false);
         tradeTypeComboBox.setEmptySelectionAllowed(false);
-        ownedBookBinder.bind(tradeTypeComboBox,OwnedBook::getTradeType,OwnedBook::setTradeType);
-        tradeTypeComboBox.addValueChangeListener(listerner ->{
-           if(listerner.getValue().equals(OwnedBook.TradeType.TRADE))
-               price.setReadOnly(true);
-           else
-               price.setReadOnly(false);
+        ownedBookBinder.bind(tradeTypeComboBox, OwnedBook::getTradeType, OwnedBook::setTradeType);
+        tradeTypeComboBox.addValueChangeListener(listerner -> {
+            if (listerner.getValue().equals(OwnedBook.TradeType.TRADE))
+                price.setReadOnly(true);
+            else
+                price.setReadOnly(false);
         });
 
         layout.addComponent(tradeTypeComboBox);
@@ -159,34 +162,28 @@ public class LibraryView extends HorizontalLayout implements View {
         TextField firstName = new TextField("First Name");
         authorBinder.forField(firstName)
                 .withValidator(new NotEmptyValidator())
-                .bind(Author::getFname,Author::setFname);
+                .bind(Author::getFname, Author::setFname);
         authorsForm.addComponent(firstName);
 
         TextField middleName = new TextField("Middle Name");
         authorBinder.forField(middleName)
-                .withValidator(new NotEmptyValidator())
-                .bind(Author::getMname,Author::setMname);
+                .bind(Author::getMname, Author::setMname);
         authorsForm.addComponent(middleName);
 
         TextField lastName = new TextField("Last Name");
         authorBinder.forField(lastName)
                 .withValidator(new NotEmptyValidator())
-                .bind(Author::getLname,Author::setLname);
+                .bind(Author::getLname, Author::setLname);
         authorsForm.addComponent(lastName);
         //TODO: Dynamically add author forms
         layout.addComponent(authorsForm);
-
-
 
 
         Button addBook = new Button("Add Book");
         layout.addComponent(addBook);
 
 
-
-        addBook.addClickListener(listener ->{
-
-
+        addBook.addClickListener(listener -> {
 
 
             Long isbnNumber = Long.valueOf(isbnField.getValue());
@@ -194,15 +191,16 @@ public class LibraryView extends HorizontalLayout implements View {
             Optional<Book> book = service.getBookDetailsFromGoogleBooks(isbnNumber);
 
 
-            if(bookBinder.isValid()){
-                if(!user.isPresent())
+            if (bookBinder.isValid() && authorBinder.isValid()
+                    && ownedBookBinder.isValid()) {
+                if (!user.isPresent())
                     throw new IllegalStateException();
 
-                if(!book.isPresent()){
+                if (!book.isPresent()) {
                     Book book1 = new Book();
                     try {
                         bookBinder.writeBean(book1);
-                    }catch (ValidationException e){
+                    } catch (ValidationException e) {
                         Notification.show(e.getMessage());
 
                     }
@@ -211,12 +209,12 @@ public class LibraryView extends HorizontalLayout implements View {
                     Author author = new Author();
                     try {
                         authorBinder.writeBean(author);
-                    } catch (ValidationException e){
+                    } catch (ValidationException e) {
                         Notification.show(e.getMessage());
                     }
 
                     book1.setAuthors(Arrays.asList(author));
-
+                    book1.setLanguage(language.getValue().getLanguage());
                     book = Optional.of(book1);
 
                 } else {
@@ -225,10 +223,10 @@ public class LibraryView extends HorizontalLayout implements View {
                     String thumbnail = details.getThumbnail();
                     String description = details.getDescription();
 
-                    if(thumbnail != null)
+                    if (thumbnail != null)
                         book.get().setThumbnail(details.getThumbnail());
 
-                    if(description != null)
+                    if (description != null)
                         book.get().setDescription(description);
                 }
 
@@ -236,7 +234,7 @@ public class LibraryView extends HorizontalLayout implements View {
                 OwnedBook ownedBook = new OwnedBook();
                 try {
                     ownedBookBinder.writeBean(ownedBook);
-                } catch (ValidationException e){
+                } catch (ValidationException e) {
                     Notification.show(e.getMessage());
                 }
 
@@ -244,7 +242,7 @@ public class LibraryView extends HorizontalLayout implements View {
                 ownedBook.setEmail(user.get().getEmail());
                 ownedBook.setBook(book.get());
 
-                if(service.addBook(ownedBook))
+                if (service.addBook(ownedBook))
                     Notification.show("Book Added Successfully");
                 else
                     Notification.show("Unable to add book try again!");
@@ -255,25 +253,21 @@ public class LibraryView extends HorizontalLayout implements View {
     }
 
 
+    private GridLayout showUsersBooks() {
 
-    private GridLayout showUsersBooks(){
-
-        GridLayout layout = new GridLayout(3,1);
+        GridLayout layout = new GridLayout(3, 1);
         layout.setSpacing(true);
         layout.addStyleName(ValoTheme.LAYOUT_HORIZONTAL_WRAPPING);
 
         List<Book> books = service.getUsersBooks();
 
-        for(Book b : books){
+        for (Book b : books) {
             LibBookCard card = new LibBookCard(b);
             layout.addComponent(card);
         }
 
         return layout;
     }
-
-
-
 
 
 }

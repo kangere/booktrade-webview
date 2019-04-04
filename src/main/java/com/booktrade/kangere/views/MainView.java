@@ -67,8 +67,9 @@ public class MainView extends VerticalLayout implements View {
         options.addItem("Logout",menuItem -> {
             getUI().getSession().close();
 
-            ClientService service = ClientService.getInstance();
-            service.close();
+            //TODO: free up resources without closing client
+            /*ClientService service = ClientService.getInstance();
+            service.close();*/
 
             //TODO: Fix navigation to login view
             getUI().getCurrent().getNavigator().navigateTo(LoginView.NAME);
