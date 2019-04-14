@@ -12,9 +12,14 @@ public class SessionData {
 
 
 
-    public static Optional<User> getCurrentUser(){
+    public static User getCurrentUser(){
 
-        return Optional.of((User)VaadinSession.getCurrent().getAttribute("user"));
+        User user = (User)VaadinSession.getCurrent().getAttribute("user");
+
+        if(user == null)
+            throw new IllegalStateException("User not found");
+
+        return user;
     }
 
     public static void setCurrentUser(User user){

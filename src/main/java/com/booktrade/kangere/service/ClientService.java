@@ -5,7 +5,6 @@ import com.booktrade.kangere.entities.*;
 
 import com.booktrade.kangere.utils.Parser;
 import com.booktrade.kangere.utils.SessionData;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 
@@ -15,7 +14,6 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.*;
@@ -88,23 +86,20 @@ public class ClientService {
 
         Invocation.Builder builder = base.path("users/{email}/books")
                 .resolveTemplate("email", ownedBook.getEmail())
-                .request(MediaType.APPLICATION_JSON);
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId);
 
-        Response response = builder.cookie(sessionId).post(Entity.entity(ownedBook, MediaType.APPLICATION_JSON));
+        Response response = builder.post(Entity.entity(ownedBook, MediaType.APPLICATION_JSON));
 
         return response.getStatus() == 200;
     }
 
     public List<Book> getUsersBooks(){
 
-        Optional<User> user = SessionData.getCurrentUser();
-
-        //TODO:  logout
-        if(!user.isPresent())
-            throw new IllegalStateException("No User Found");
+        User user = SessionData.getCurrentUser();
 
         Response response = base.path("users/{email}/books")
-                .resolveTemplate("email",user.get().getEmail())
+                .resolveTemplate("email",user.getEmail())
                 .request(MediaType.APPLICATION_JSON)
                 .cookie(sessionId)
                 .get();
@@ -159,14 +154,11 @@ public class ClientService {
 
     public boolean deleteBook(Long isbn){
 
-        Optional<User> user = SessionData.getCurrentUser();
+        User user = SessionData.getCurrentUser();
 
-        //TODO:  logout
-        if(!user.isPresent())
-            throw new IllegalStateException("No User Found");
 
         Invocation.Builder builder = base.path("users/{email}/books/{isbn}")
-                .resolveTemplate("email", user.get().getEmail())
+                .resolveTemplate("email", user.getEmail())
                 .resolveTemplate("isbn",isbn)
                 .request(MediaType.APPLICATION_JSON)
                 .cookie(sessionId);
@@ -182,14 +174,11 @@ public class ClientService {
 
     public List<OwnedBook> getBookOwners(String email, Long isbn){
 
-        Optional<User> user = SessionData.getCurrentUser();
+        User user = SessionData.getCurrentUser();
 
-        //TODO:  logout
-        if(!user.isPresent())
-            throw new IllegalStateException("No User Found");
 
         Response response = base.path("users/{email}/books/{isbn}/owners")
-                .resolveTemplate("email",user.get().getEmail())
+                .resolveTemplate("email",user.getEmail())
                 .resolveTemplate("isbn",isbn)
                 .request(MediaType.APPLICATION_JSON)
                 .cookie(sessionId)
@@ -200,6 +189,64 @@ public class ClientService {
 
         return response.readEntity(new GenericType<List<OwnedBook>>(){});
 
+    }
+
+    public boolean createRequest(Request request){
+
+        String email = request.getRequesterEmail();
+
+        Invocation.Builder builder = base.path("users/{email}/requests")
+                .resolveTemplate("email",email )
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId);
+
+        Response response = builder.post(Entity.entity(request, MediaType.APPLICATION_JSON));
+
+        if(response.getStatus() != 200){
+            logger.log(Level.SEVERE, response.getStatusInfo().toString());
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean updateUserRequest(Request request){
+
+
+        User user = SessionData.getCurrentUser();
+
+
+        Invocation.Builder builder = base.path("users/{email}/requests/{requestId}")
+                .resolveTemplate("email", user.getEmail())
+                .resolveTemplate("requestId",request.getRequestId())
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId);
+
+        Response response = builder.put(Entity.entity(request,MediaType.APPLICATION_JSON));
+
+        if(response.getStatus() != 200) {
+            logger.log(Level.SEVERE,response.getStatusInfo().toString());
+            return false;
+        }
+
+
+        return true;
+    }
+
+    public List<Request> getUserRequests(String email){
+
+        User user = SessionData.getCurrentUser();
+
+        Response response = base.path("users/{email}/requests")
+                .resolveTemplate("email",user.getEmail())
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId)
+                .get();
+
+        if(response.getStatus() != 200)
+            logger.log(Level.SEVERE, response.getStatusInfo().toString());
+
+        return response.readEntity(new GenericType<List<Request>>(){});
     }
 
 

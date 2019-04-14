@@ -25,7 +25,7 @@ public class LibraryView extends HorizontalLayout implements View {
 
     public static final String NAME = "library";
 
-    private Optional<User> user;
+    private User user;
 
 
     private ClientService service;
@@ -193,8 +193,7 @@ public class LibraryView extends HorizontalLayout implements View {
 
             if (bookBinder.isValid() && authorBinder.isValid()
                     && ownedBookBinder.isValid()) {
-                if (!user.isPresent())
-                    throw new IllegalStateException();
+
 
                 if (!book.isPresent()) {
                     Book book1 = new Book();
@@ -239,7 +238,7 @@ public class LibraryView extends HorizontalLayout implements View {
                 }
 
                 ownedBook.setIsbn(book.get().getIsbn());
-                ownedBook.setEmail(user.get().getEmail());
+                ownedBook.setEmail(user.getEmail());
                 ownedBook.setBook(book.get());
 
                 if (service.addBook(ownedBook))

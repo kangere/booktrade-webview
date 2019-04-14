@@ -1,10 +1,7 @@
 package com.booktrade.kangere.views;
 
 import com.booktrade.kangere.components.OwnerRow;
-import com.booktrade.kangere.entities.Book;
-import com.booktrade.kangere.entities.ExtraBookDetails;
-import com.booktrade.kangere.entities.OwnedBook;
-import com.booktrade.kangere.entities.User;
+import com.booktrade.kangere.entities.*;
 import com.booktrade.kangere.service.ClientService;
 import com.booktrade.kangere.utils.SessionData;
 import com.vaadin.data.provider.ListDataProvider;
@@ -22,6 +19,8 @@ public class BookView extends VerticalLayout implements View {
     public static final String NAME = "bookview";
 
     private Long isbn;
+
+    private User user;
 
 
     private ClientService service;
@@ -77,26 +76,51 @@ public class BookView extends VerticalLayout implements View {
 
     private Grid<OwnedBook> showBookOwners() {
 
-        Optional<User> user = SessionData.getCurrentUser();
-
-        List<OwnedBook> owners = service.getBookOwners(user.get().getEmail(),isbn);
+        List<OwnedBook> owners = service.getBookOwners(user.getEmail(), isbn);
 
         Grid<OwnedBook> ownedBookGrid = new Grid<>();
 
         //TODO: add renderer to show username
+        ownedBookGrid.addComponentColumn(ownedBook -> {
+            Label username = new Label();
+
+            User owner = ownedBook.getUser();
+
+            username.setValue(owner.getUsername());
+
+            return username;
+        }).setCaption("Username");
 
         ownedBookGrid.addColumn(OwnedBook::getBookCondition)
                 .setCaption("Book Condition");
 
+
         ownedBookGrid.addColumn(OwnedBook::getTradeType)
                 .setCaption("Trade Type");
 
+        ownedBookGrid.addColumn(OwnedBook::getPrice)
+                .setCaption("Price");
+
         ownedBookGrid.addComponentColumn(ownedBook -> {
 
-            Button view = new Button("View");
-            view.addClickListener(listener -> Notification.show("View Users, " + ownedBook.getUser().toString() + " Book"));
+            Button buy = new Button("Buy Book");
 
-            return view;
+            buy.addClickListener(clickEvent -> Notification.show("Added to shopping cart"));
+
+            List<Book> usersBooks = service.getUsersBooks();
+            ListDataProvider<Book> dataProvider = new ListDataProvider<>(usersBooks);
+            PopupView requestExchange = new PopupView("Request Exchange",
+                    getPopupContent(ownedBook.getEmail(), dataProvider));
+
+
+            if (ownedBook.getTradeType().equals(OwnedBook.TradeType.SELL)) {
+                return buy;
+            } else if (ownedBook.getTradeType().equals(OwnedBook.TradeType.TRADE))
+                return requestExchange;
+
+            HorizontalLayout layout = new HorizontalLayout();
+            layout.addComponents(buy, requestExchange);
+            return layout;
         });
 
         ListDataProvider<OwnedBook> dataProvider = new ListDataProvider<>(owners);
@@ -106,16 +130,51 @@ public class BookView extends VerticalLayout implements View {
         return ownedBookGrid;
     }
 
+    private Grid<Book> getPopupContent(String ownerEmail, ListDataProvider<Book> dataProvider) {
+        Grid<Book> grid = new Grid<>();
+
+        grid.addColumn(Book::getTitle).setCaption("Title");
+
+        grid.addComponentColumn(book -> {
+            Button trade = new Button("Trade");
+
+            Request request = new Request();
+            request.setOwnerBook(isbn);
+            request.setOwnerEmail(ownerEmail);
+            request.setRequesterEmail(user.getEmail());
+            request.setRequesterBook(book.getIsbn());
+            request.setStatus(Request.RequestStatus.ACTIVE);
+
+            trade.addClickListener(event -> {
+
+                if(service.createRequest(request))
+                    Notification.show("Request sent");
+                else
+                    Notification.show("Unable to send Request");
+
+
+            });
+            return trade;
+        });
+
+        grid.setDataProvider(dataProvider);
+        return grid;
+    }
+
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
         isbn = Long.valueOf(event.getParameters());
 
         service = ClientService.getInstance();
 
+        user = SessionData.getCurrentUser();
+
         HorizontalLayout bookDetails = showBookDetails();
 
         Grid<OwnedBook> bookOwners = showBookOwners();
 
         addComponents(bookDetails, bookOwners);
+
+        bookOwners.setWidth("100%");
     }
 }

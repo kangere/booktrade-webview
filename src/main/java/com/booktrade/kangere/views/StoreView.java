@@ -21,7 +21,7 @@ public class StoreView extends VerticalLayout implements View {
 
     private ClientService service;
 
-    private CssLayout grid = new CssLayout();
+    private GridLayout grid = new GridLayout(3,1);
 
     public StoreView(){
        /* String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
