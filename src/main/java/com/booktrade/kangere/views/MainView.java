@@ -1,5 +1,6 @@
 package com.booktrade.kangere.views;
 
+import com.booktrade.kangere.MyUI;
 import com.booktrade.kangere.entities.User;
 import com.booktrade.kangere.service.ClientService;
 import com.vaadin.navigator.Navigator;
@@ -64,17 +65,7 @@ public class MainView extends VerticalLayout implements View {
 
         MenuBar.MenuItem options = menuBar.addItem(firstName + " " + lastName);
         options.addItem("Settings");
-        options.addItem("Logout",menuItem -> {
-            getUI().getSession().close();
-
-            //TODO: free up resources without closing client
-            /*ClientService service = ClientService.getInstance();
-            service.close();*/
-
-            //TODO: Fix navigation to login view
-            getUI().getCurrent().getNavigator().navigateTo(LoginView.NAME);
-
-        });
+        options.addItem("Logout",menuItem -> logout());
 
         menuBar.setWidth(100f,Unit.PERCENTAGE);
 
@@ -82,5 +73,16 @@ public class MainView extends VerticalLayout implements View {
 
 
         return menuBar;
+    }
+
+    private  void logout(){
+        getUI().getSession().close();
+
+        ClientService service = ClientService.getInstance();
+        service.close();
+
+        //TODO: Fix navigation to login view
+//        getUI().getNavigator().navigateTo(LoginView.NAME);
+        MyUI.navigator.navigateTo(LoginView.NAME);
     }
 }

@@ -17,21 +17,20 @@ public class BookCard extends VerticalLayout {
 
     private Book book;
 
-    private ExtraBookDetails details;
 
-    public BookCard(Book book, ExtraBookDetails details){
+    public BookCard(Book book){
 
         this.title = book.getTitle();
 
         this.book = book;
-        this.details = details;
+
 
 
 
         Image thumbnail = new Image();
 
-        if(details.getThumbnail() != null) {
-            thumbnail.setSource(new ExternalResource(details.getThumbnail()));
+        if(book.getThumbnail() != null) {
+            thumbnail.setSource(new ExternalResource(book.getThumbnail()));
         } else {
 
             String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();

@@ -84,7 +84,14 @@ public class RequestsView extends VerticalLayout implements View {
 
             Button retract = new Button("Retract");
 
-            retract.addClickListener(clickEvent -> Notification.show("Book Retracted"));
+            retract.addClickListener(clickEvent -> {
+
+                request.setStatus(Request.RequestStatus.RETRACTED);
+                if(service.updateUserRequest(request))
+                    Notification.show("Trade Retracted");
+                else
+                    Notification.show("Unable to retract request, try again later");
+            });
 
             return retract;
         });
@@ -104,16 +111,30 @@ public class RequestsView extends VerticalLayout implements View {
         grid.addComponentColumn(request -> {
             Button decline = new Button("Decline");
 
-            decline.addClickListener(clickEvent -> Notification.show("Trade Declined"));
+
+
+            decline.addClickListener(clickEvent -> {
+                request.setStatus(Request.RequestStatus.DECLINED);
+                if(service.updateUserRequest(request))
+                    Notification.show("Trade Declined");
+                else
+                    Notification.show("Unable to decline, try again later!");
+            });
             return decline;
         });
 
         grid.addComponentColumn(request -> {
             Button accept = new Button("Accept");
 
+
             accept.addClickListener(clickEvent -> {
 
-                Notification.show("Trade Accepted");
+                request.setStatus(Request.RequestStatus.COMPLETED);
+
+                if(service.updateUserRequest(request))
+                    Notification.show("Trade Completed");
+                else
+                    Notification.show("Unable to complete trade, try again later!");
 
             });
             return accept;

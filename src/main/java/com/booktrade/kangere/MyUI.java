@@ -22,11 +22,12 @@ import com.vaadin.ui.UI;
 public class MyUI extends UI {
 
 
+    public static Navigator navigator;
 
     @Override
     protected void init(VaadinRequest vaadinRequest) {
 
-        Navigator navigator = new Navigator(this,this);
+        navigator = new Navigator(this,this);
 
         LoginView loginView = new LoginView(navigator);
 

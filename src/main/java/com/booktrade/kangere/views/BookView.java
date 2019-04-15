@@ -11,6 +11,7 @@ import com.vaadin.server.*;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.*;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,17 +35,20 @@ public class BookView extends VerticalLayout implements View {
 
         Book book = service.getBookByIsbn(isbn).get(0);
 
-        ExtraBookDetails details = service.getExtraBookDetails(book.getExternalLink());
 
 
         HorizontalLayout layout = new HorizontalLayout();
 
 
         Image thumbnail = new Image();
-        if (details.getThumbnail() != null)
-            thumbnail.setSource(new ExternalResource(details.getThumbnail()));
-        else
-            thumbnail.setCaption("No Thumbnail");
+        if (book.getThumbnail() != null) {
+            thumbnail.setSource(new ExternalResource(book.getThumbnail()));
+        } else {
+            String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
+            FileResource resource = new FileResource(new File(basepath+ "/WEB-INF/classes/images/placeholder.jpg"));
+
+            thumbnail.setSource(resource);
+        }
 
         thumbnail.setWidth(null);
 
@@ -58,7 +62,7 @@ public class BookView extends VerticalLayout implements View {
 
         Label description = new Label();
         description.setWidth(500, Unit.PIXELS);
-        description.setValue(details.getDescription() != null ? details.getDescription() : "");
+        description.setValue(book.getDescription() != null ? book.getDescription() : "");
 
         text.addComponent(description);
 

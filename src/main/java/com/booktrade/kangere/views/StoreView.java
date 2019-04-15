@@ -60,13 +60,7 @@ public class StoreView extends VerticalLayout implements View {
 
 
         for(Book b : books){
-
-            ExtraBookDetails details = new ExtraBookDetails();
-
-            if(b.getExternalLink() != null) {
-                details = service.getExtraBookDetails(b.getExternalLink());
-            }
-            BookCard card = new BookCard(b,details);
+            BookCard card = new BookCard(b);
             grid.addComponent(card);
         }
 

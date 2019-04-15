@@ -278,8 +278,11 @@ public class ClientService {
 
 
     public void close() {
-        if (serviceOptional.isPresent())
+        if (serviceOptional.isPresent()) {
             client.close();
+            client = null;
+            serviceOptional = Optional.empty();
+        }
 
     }
 

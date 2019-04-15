@@ -83,27 +83,13 @@ public class LibraryView extends HorizontalLayout implements View {
         layout.addComponent(isbnField);
 
 
-        TextField publishedDate = new TextField("Date Published");
-        bookBinder.forField(publishedDate)
-                .withValidator(new NotEmptyValidator())
-                .withConverter(new StringToIntegerConverter("Number Required"))
-                .bind(Book::getPublishedDate, Book::setPublishedDate);
-        layout.addComponent(publishedDate);
 
-
-        TextField publisher = new TextField("Publisher");
-        bookBinder.forField(publisher)
-                .withValidator(new NotEmptyValidator(60))
-                .bind(Book::getPublisher, Book::setPublisher);
-        layout.addComponent(publisher);
-
-
-//        TextField language = new TextField("Language");
-//        bookBinder.bind(language, Book::getLanguage, Book::setLanguage);
-//        layout.addComponent(language);
 
         ComboBox<Locale> language = new ComboBox<>("Language");
         language.setItems(languages);
+        language.setItemCaptionGenerator(Locale::getDisplayLanguage);
+        language.setTextInputAllowed(false);
+        language.setEmptySelectionAllowed(false);
         layout.addComponent(language);
 
 
