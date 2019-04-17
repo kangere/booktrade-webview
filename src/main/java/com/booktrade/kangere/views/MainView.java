@@ -32,7 +32,7 @@ public class MainView extends VerticalLayout implements View {
         internalNavigator.addView(StoreView.NAME,StoreView.class);
         internalNavigator.addView(LibraryView.NAME,LibraryView.class);
         internalNavigator.addView(BookView.NAME,BookView.class);
-        internalNavigator.addView(SettingsView.NAME,SettingsView.class);
+        internalNavigator.addView(AccountInformationView.NAME, AccountInformationView.class);
 
         internalNavigator.setErrorView(StoreView.class);
 
@@ -66,7 +66,7 @@ public class MainView extends VerticalLayout implements View {
 
 
         MenuBar.MenuItem options = menuBar.addItem(firstName + " " + lastName);
-        options.addItem("Settings",menuItem -> internalNavigator.navigateTo(SettingsView.NAME));
+        options.addItem("Account",menuItem -> internalNavigator.navigateTo(AccountInformationView.NAME));
         options.addItem("Logout",menuItem -> logout());
 
         menuBar.setWidth(100f,Unit.PERCENTAGE);

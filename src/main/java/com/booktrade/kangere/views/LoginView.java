@@ -127,10 +127,6 @@ public class LoginView extends VerticalLayout implements View {
         binder.bind(passField,User::getPassword,User::setPassword);
         layout.addComponent(passField);
 
-        //TODO: Match password with previous password field
-        PasswordField passConfirmField = new PasswordField("Confirm Password");
-        binder.bind(passConfirmField,User::getPassword,User::setPassword);
-        layout.addComponent(passConfirmField);
 
         PasswordField confirmField = new PasswordField("Confirm Password");
         binder.forField(confirmField)

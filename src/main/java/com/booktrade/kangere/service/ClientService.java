@@ -81,6 +81,25 @@ public class ClientService {
         return response.getStatus() == 200;
     }
 
+    public boolean updateUserInformation(User user){
+
+        User currentUser = SessionData.getCurrentUser();
+
+        Invocation.Builder builder = base.path("users/{email}")
+                .resolveTemplate("email", currentUser.getEmail())
+                .request(MediaType.APPLICATION_JSON)
+                .cookie(sessionId);
+
+        Response response = builder.put(Entity.entity(user,MediaType.APPLICATION_JSON));
+
+        if(response.getStatus() == 200)
+            return true;
+
+        logger.log(Level.SEVERE, response.getStatusInfo().toString());
+
+        return false;
+    }
+
     public boolean addBook(OwnedBook ownedBook) {
 
 
