@@ -24,13 +24,7 @@ public class StoreView extends VerticalLayout implements View {
     private GridLayout grid = new GridLayout(3,1);
 
     public StoreView(){
-       /* String basepath = VaadinService.getCurrent().getBaseDirectory().getAbsolutePath();
 
-        FileResource resource = new FileResource(new File(basepath+ "/WEB-INF/classes/images/lib.jpg"));
-
-        Image poster = new Image("",resource);
-        poster.setWidth("100%");
-        poster.setHeight(400, Unit.PIXELS);*/
        grid.setStyleName("wrap");
         service = ClientService.getInstance();
 

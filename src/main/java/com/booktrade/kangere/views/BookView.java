@@ -39,6 +39,7 @@ public class BookView extends VerticalLayout implements View {
 
         HorizontalLayout layout = new HorizontalLayout();
 
+        VerticalLayout verticalLayout = new VerticalLayout();
 
         Image thumbnail = new Image();
         if (book.getThumbnail() != null) {
@@ -52,7 +53,14 @@ public class BookView extends VerticalLayout implements View {
 
         thumbnail.setWidth(null);
 
-        layout.addComponent(thumbnail);
+        Label authorLabel = new Label("Authors");
+
+        verticalLayout.addComponents(thumbnail,authorLabel);
+
+        for(Author author : book.getAuthors())
+            verticalLayout.addComponent(new Label(author.toString()));
+
+        layout.addComponent(verticalLayout);
 
         VerticalLayout text = new VerticalLayout();
 
